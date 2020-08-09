@@ -43,6 +43,8 @@ function App() {
 
   console.log(positions)
 
+  if (positions[0] === undefined) return null;
+
   return (
     // in render()
     <Map
@@ -51,7 +53,7 @@ function App() {
         height: '100vh',
         width: '100vw'
       }}
-      center={[positions[0]?.[0]??0, positions[0]?.[1]??0]}
+      center={[positions[0][0], positions[0][1]]}
       zoom={[8]} 
     >
       <Layer type="symbol" id="marker" layout={{ 'icon-image': 'marker-15', 'icon-allow-overlap': true }}>
