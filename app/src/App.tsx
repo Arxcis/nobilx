@@ -8,7 +8,32 @@ import { useState } from 'react';
 
 const STATIONS_URL = "http://127.0.0.1:8081/stations.json"
 const STATUSES_URL = "http://127.0.0.1:8081/statuses.json"
+const STATUS_AVAILABLE = 0
+const STATUS_UNKNOWN = -1
+const STATUS_OCCUPIED = 1
+const STATUS_ERROR = 2
 
+type Connector = {
+  uuid: string;
+  status: number;
+  error: number;
+  timestamp: number;
+}
+
+type StationStatus = {
+  uuid: string;
+  status: number;
+  connectors: Connector[];
+}
+
+type ChargingStation = {
+  csmd: {
+    International_id: string;
+    Position: string;
+  };
+}
+
+type DerivedStation = [number, number, StationStatus | null]
 
 function App() {
   const Map = useMemo(() => ReactMapboxGl({
@@ -16,27 +41,30 @@ function App() {
       'pk.eyJ1Ijoiam9uYXNqc28iLCJhIjoiY2tkbjEzZ2RoMWRwcTJ6bXJwanpnYmFmNyJ9.m7V5GeFoMDSkX8uhyGmYUQ'
   }), []);
 
-  const [positions, setPositions] = useState([]);
+  const [positions, setPositions] = useState<DerivedStation[]>([]);
 
   useEffect(() => {
-    (async function() {
+    (async function () {
       let res = await fetch(STATIONS_URL)
-      let stations = await res.json();
+      let stations = (await res.json())
 
       res = await fetch(STATUSES_URL)
-      let statuses = await res.json();  
+      let statuses = await res.json() as StationStatus[];
 
-      const pos = stations.chargerstations.map(
-        (station: any) =>  {
-          const [lat, lng]: [string, string] = station
+      const chargingStations = stations.chargerstations as ChargingStation[]
+      const pos = chargingStations.map(
+        (station) => {
+          const [lat, lng] = station
             .csmd
             .Position
             .match(/([\d]+\.[\d]+),([\d]+\.[\d]+)/)
-            .slice(1)
+            ?.slice(1) ?? ["0", "0"]
 
-          return [parseFloat(lng), parseFloat(lat)]
+
+          const status = statuses.find(status => status.uuid === station.csmd.International_id) ?? null;
+          return [parseFloat(lng), parseFloat(lat), status]
         }
-      );
+      ) as DerivedStation[];
       setPositions(pos)
     })();
   }, []);
@@ -54,10 +82,21 @@ function App() {
         width: '100vw'
       }}
       center={[positions[0][0], positions[0][1]]}
-      zoom={[8]} 
+      zoom={[8]}
     >
-      <Layer type="symbol" id="marker" layout={{ 'icon-image': 'marker-15', 'icon-allow-overlap': true }}>
-        {positions.map((position: [number, number]) => <Feature coordinates={position} />)}
+      <Layer type="symbol" id="marker" layout={{
+        'icon-image': 'marker-11',
+        'icon-allow-overlap': true,
+        'icon-size': 1.2
+      }}
+      >
+        {positions
+          .filter((position: DerivedStation) => position[2])
+          .filter((position: DerivedStation) => position[2]?.status !== STATUS_UNKNOWN)
+          .map(
+            (position: DerivedStation) =>
+              <Feature coordinates={[position[0], position[1]]} key={position[2]?.uuid ?? ""} />)
+        }
       </Layer>
     </Map>
   );
