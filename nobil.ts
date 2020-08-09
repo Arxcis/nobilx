@@ -9,11 +9,13 @@ import { blue, red, yellow } from "https://deno.land/std/fmt/colors.ts";
 import { writeJson } from "https://deno.land/std/fs/mod.ts";
 import { Application, Router, Context, send } from 'https://deno.land/x/oak/mod.ts'
 import { oakCors } from "https://deno.land/x/cors/mod.ts";
+import { config } from 'https://deno.land/x/dotenv/mod.ts';
+
 
 //
 // Data
 //
-const API_KEY = "!!"
+const { API_KEY } = config({ safe: true });
 const DATADUMP_URL = `https://nobil.no/api/server/datadump.php?countrycode=NOR&format=json&apikey=${API_KEY}`
 const WS_URL = `ws://realtime.nobil.no/api/v1/stream?apikey=${API_KEY}`
 
