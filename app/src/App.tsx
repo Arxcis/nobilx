@@ -2,8 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import ReactMapGL, { Layer, Source } from 'react-map-gl';
 import './App.css';
 
-const STATIONS_URL = "http://127.0.0.1:8081/stations.json"
-const STATUSES_URL = "http://127.0.0.1:8081/statuses.json"
 const STATUS_AVAILABLE = 0
 const STATUS_UNKNOWN = -1
 
@@ -41,11 +39,27 @@ function App() {
 
   useEffect(() => {
     (async function () {
-      let res = await fetch(STATIONS_URL)
-      let stations = (await res.json())
+      let stations: any;
+      let statuses: StationStatus[] = [];
+      try {
+        let res = await fetch("/stations.json")
+        stations = (await res.json())
+      } catch (e)  {console.warn(e)   }
 
-      res = await fetch(STATUSES_URL)
-      let statuses = await res.json() as StationStatus[];
+      try {
+        let res = await fetch("/statuses.json")
+        statuses = await res.json() as StationStatus[];
+      } catch (e)  {console.warn(e)   }
+
+      try {
+        let res = await fetch("http://127.0.0.1:8081/stations.json")
+        stations = (await res.json())
+      } catch (e)  {console.warn(e)   }
+
+      try {
+        let res = await fetch("http://127.0.0.1:8081/statuses.json")
+        statuses = await res.json() as StationStatus[];
+      } catch (e)  {console.warn(e)   }
 
       const chargingStations = stations.chargerstations as ChargingStation[]
       const pos = chargingStations.map(
