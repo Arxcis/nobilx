@@ -1,14 +1,14 @@
 {
   "files": {
     "main.css": "/nobilx/static/css/main.5f361e03.chunk.css",
-    "main.js": "/nobilx/static/js/main.13566173.chunk.js",
-    "main.js.map": "/nobilx/static/js/main.13566173.chunk.js.map",
+    "main.js": "/nobilx/static/js/main.2b7a8631.chunk.js",
+    "main.js.map": "/nobilx/static/js/main.2b7a8631.chunk.js.map",
     "runtime-main.js": "/nobilx/static/js/runtime-main.c9fd5811.js",
     "runtime-main.js.map": "/nobilx/static/js/runtime-main.c9fd5811.js.map",
     "static/js/2.5b040d4e.chunk.js": "/nobilx/static/js/2.5b040d4e.chunk.js",
     "static/js/2.5b040d4e.chunk.js.map": "/nobilx/static/js/2.5b040d4e.chunk.js.map",
     "index.html": "/nobilx/index.html",
-    "precache-manifest.ce2a7d32a2a6c0d9951eebf55ec61ae2.js": "/nobilx/precache-manifest.ce2a7d32a2a6c0d9951eebf55ec61ae2.js",
+    "precache-manifest.6bd1641ed05d9b2a04bf6f2202a7dcf4.js": "/nobilx/precache-manifest.6bd1641ed05d9b2a04bf6f2202a7dcf4.js",
     "service-worker.js": "/nobilx/service-worker.js",
     "static/css/main.5f361e03.chunk.css.map": "/nobilx/static/css/main.5f361e03.chunk.css.map",
     "static/js/2.5b040d4e.chunk.js.LICENSE.txt": "/nobilx/static/js/2.5b040d4e.chunk.js.LICENSE.txt"
@@ -17,6 +17,6 @@
     "static/js/runtime-main.c9fd5811.js",
     "static/js/2.5b040d4e.chunk.js",
     "static/css/main.5f361e03.chunk.css",
-    "static/js/main.13566173.chunk.js"
+    "static/js/main.2b7a8631.chunk.js"
   ]
 }
