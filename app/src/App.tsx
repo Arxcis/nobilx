@@ -42,12 +42,12 @@ function App() {
       let stations: any;
       let statuses: StationStatus[] = [];
       try {
-        let res = await fetch("/stations.json")
+        let res = await fetch("/data/stations.json")
         stations = (await res.json())
       } catch (e)  {console.warn(e)   }
 
       try {
-        let res = await fetch("/statuses.json")
+        let res = await fetch("/data/statuses.json")
         statuses = await res.json() as StationStatus[];
       } catch (e)  {console.warn(e)   }
 
