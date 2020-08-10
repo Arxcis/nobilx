@@ -31,6 +31,7 @@ type StationPosition = {
   status: StationStatus | null
 }
 
+const API_URL = "http://127.0.0.1:8081"
 const MAPBOX_API_ACCESS_TOKEN = 'pk.eyJ1Ijoiam9uYXNqc28iLCJhIjoiY2tkbjEzZ2RoMWRwcTJ6bXJwanpnYmFmNyJ9.m7V5GeFoMDSkX8uhyGmYUQ'
 
 function App() {
@@ -42,7 +43,7 @@ function App() {
       let stations: any = { chargerstations: [] }
       let statuses: StationStatus[] = [];
       try {
-        let res = await fetch("/data/stations.json")
+        let res = await fetch(process.env.PUBLIC_URL + "/data/stations.json")
         if (!res.ok) throw res.statusText;
         stations = (await res.json())
       } catch (err) { 
@@ -50,7 +51,7 @@ function App() {
       }
 
       try {
-        let res = await fetch("/data/statuses.json")
+        let res = await fetch(process.env.PUBLIC_URL + "/data/statuses.json")
         if (!res.ok) throw res.statusText;
         statuses = await res.json() as StationStatus[];
       } catch (err) { 
@@ -58,7 +59,7 @@ function App() {
       }
 
       try {
-        let res = await fetch("http://127.0.0.1:8081/stations.json")
+        let res = await fetch(API_URL + "/stations.json")
         if (!res.ok) throw res.statusText;
         stations = (await res.json())
       } catch (err) { 
@@ -66,7 +67,7 @@ function App() {
       }
 
       try {
-        let res = await fetch("http://127.0.0.1:8081/statuses.json")
+        let res = await fetch(API_URL + "/statuses.json")
         if (!res.ok) throw res.statusText;
         statuses = await res.json() as StationStatus[];
       } catch (err) { 
