@@ -1,17 +1,11 @@
-import React from 'react';
-import logo from './logo.svg';
+import React, { useEffect, useMemo, useState } from 'react';
+import ReactMapGL, { Layer, Source } from 'react-map-gl';
 import './App.css';
-import { useEffect } from 'react';
-import ReactMapboxGl, { Layer, Feature } from 'react-mapbox-gl';
-import { useMemo } from 'react';
-import { useState } from 'react';
 
 const STATIONS_URL = "http://127.0.0.1:8081/stations.json"
 const STATUSES_URL = "http://127.0.0.1:8081/statuses.json"
 const STATUS_AVAILABLE = 0
 const STATUS_UNKNOWN = -1
-const STATUS_OCCUPIED = 1
-const STATUS_ERROR = 2
 
 type Connector = {
   uuid: string;
@@ -33,15 +27,17 @@ type ChargingStation = {
   };
 }
 
-type DerivedStation = [number, number, StationStatus | null]
+type StationPosition = {
+  latitude: number,
+  longitude: number,
+  status: StationStatus | null
+}
+
+const MAPBOX_API_ACCESS_TOKEN = 'pk.eyJ1Ijoiam9uYXNqc28iLCJhIjoiY2tkbjEzZ2RoMWRwcTJ6bXJwanpnYmFmNyJ9.m7V5GeFoMDSkX8uhyGmYUQ'
 
 function App() {
-  const Map = useMemo(() => ReactMapboxGl({
-    accessToken:
-      'pk.eyJ1Ijoiam9uYXNqc28iLCJhIjoiY2tkbjEzZ2RoMWRwcTJ6bXJwanpnYmFmNyJ9.m7V5GeFoMDSkX8uhyGmYUQ'
-  }), []);
 
-  const [positions, setPositions] = useState<DerivedStation[]>([]);
+  const [positions, setPositions] = useState<StationPosition[]>([]);
 
   useEffect(() => {
     (async function () {
@@ -62,44 +58,103 @@ function App() {
 
 
           const status = statuses.find(status => status.uuid === station.csmd.International_id) ?? null;
-          return [parseFloat(lng), parseFloat(lat), status]
+          return {
+            longitude: parseFloat(lng),
+            latitude: parseFloat(lat),
+            status
+          }
         }
-      ) as DerivedStation[];
+      ) as StationPosition[];
       setPositions(pos)
     })();
   }, []);
 
-  console.log(positions)
 
-  if (positions[0] === undefined) return null;
+
+
+  let positionsWithStatus = useMemo(() => positions
+    .filter((position: StationPosition) => position.status)
+    .filter((position: StationPosition) => position.status!.status !== STATUS_UNKNOWN), [positions]);
+
+  const iconMap = useMemo(() => positionsWithStatus.reduce((acc: Map<string, StationPosition[]>, position: StationPosition) => {
+    const MAX_COUNT = 8
+
+    let availableCount = position.status!.connectors.reduce((acc, conn) => acc + (conn.status === STATUS_AVAILABLE ? 1 : 0), 0);
+    availableCount = availableCount > MAX_COUNT ? MAX_COUNT : availableCount;
+    let totalCount = position.status!.connectors.length;
+    totalCount = totalCount > MAX_COUNT ? MAX_COUNT : totalCount;
+
+    let occupiedCount = totalCount - availableCount;
+
+    const iconKey = "station-" + occupiedCount + "-" + availableCount
+    acc.set(iconKey, [...(acc.get(iconKey) ?? []), position]);
+
+    return acc;
+  }, new Map()), [positionsWithStatus]);
+
+
+
+  const [viewport, setViewport] = useState({
+    latitude:  positionsWithStatus[0]?.latitude ?? 0.0,
+    longitude: positionsWithStatus[0]?.longitude ?? 0.0,
+    zoom: 8
+  });
+
+  function onViewportChange(viewport: any) { 
+    const {width, height, ...etc} = viewport
+    setViewport({...etc})
+  } 
+  if (positionsWithStatus[0] === undefined) return null;
 
   return (
-    // in render()
-    <Map
-      style="mapbox://styles/mapbox/streets-v9"
-      containerStyle={{
+    <ReactMapGL
+      width='100vw'
+      height='100vh'
+      mapboxApiAccessToken={MAPBOX_API_ACCESS_TOKEN}
+      {...viewport}
+      onViewportChange={viewport => onViewportChange(viewport)}
+      mapStyle="mapbox://styles/jonasjso/ckdnf47e32nq31imtzdpo76lw/draft"
+      style={{
         height: '100vh',
         width: '100vw'
       }}
-      center={[positions[0][0], positions[0][1]]}
-      zoom={[8]}
     >
-      <Layer type="symbol" id="marker" layout={{
-        'icon-image': 'marker-11',
-        'icon-allow-overlap': true,
-        'icon-size': 1.2
-      }}
+      {Array.from(iconMap.entries()).map(([iconKey, iconPositions]) => 
+      <Source   
+        key={iconKey}
+        id={"source-"+iconKey}  
+        type="geojson"
+        data={makePositionFeatures(iconPositions)}
       >
-        {positions
-          .filter((position: DerivedStation) => position[2])
-          .filter((position: DerivedStation) => position[2]?.status !== STATUS_UNKNOWN)
-          .map(
-            (position: DerivedStation) =>
-              <Feature coordinates={[position[0], position[1]]} key={position[2]?.uuid ?? ""} />)
-        }
-      </Layer>
-    </Map>
+        <Layer
+          type="symbol"
+          layout={{
+            'icon-image': iconKey,
+            'icon-allow-overlap': true,
+            'icon-size': [
+              "interpolate", ["linear"], ["zoom"],
+              5, .05,
+              10, .1,
+              15, .2
+            ]
+          }}
+          paint={{}}
+          />
+    </Source>
+  )}
+</ReactMapGL>
+
   );
 }
+
+function makePositionFeatures(positions: StationPosition[]) {
+  return {
+    type: 'FeatureCollection',
+    features: positions.map((position: StationPosition) => (
+      {type: 'Feature', geometry: {type: 'Point', coordinates: [position.longitude, position.latitude]}}
+    )),
+  } as any;
+}
+    
 
 export default App;
