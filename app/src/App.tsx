@@ -46,32 +46,32 @@ function App() {
         let res = await fetch(process.env.PUBLIC_URL + "/data/stations.json")
         if (!res.ok) throw res.statusText;
         stations = (await res.json())
-      } catch (err) { 
-        console.warn(err)   
+      } catch (err) {
+        console.warn(err)
       }
 
       try {
         let res = await fetch(process.env.PUBLIC_URL + "/data/statuses.json")
         if (!res.ok) throw res.statusText;
         statuses = await res.json() as StationStatus[];
-      } catch (err) { 
-        console.warn(err)   
+      } catch (err) {
+        console.warn(err)
       }
 
       try {
         let res = await fetch(API_URL + "/stations.json")
         if (!res.ok) throw res.statusText;
         stations = (await res.json())
-      } catch (err) { 
-        console.warn(err)   
+      } catch (err) {
+        console.warn(err)
       }
 
       try {
         let res = await fetch(API_URL + "/statuses.json")
         if (!res.ok) throw res.statusText;
         statuses = await res.json() as StationStatus[];
-      } catch (err) { 
-        console.warn(err)   
+      } catch (err) {
+        console.warn(err)
       }
 
       const chargingStations = stations.chargerstations as ChargingStation[]
@@ -103,14 +103,17 @@ function App() {
   const iconMap = useMemo(() => positionsWithStatus.reduce((acc: Map<string, StationPosition[]>, position: StationPosition) => {
     const MAX_COUNT = 8
 
-    let availableCount = position.status!.connectors.reduce((acc, conn) => acc + (conn.status === STATUS_AVAILABLE ? 1 : 0), 0);
-    availableCount = availableCount > MAX_COUNT ? MAX_COUNT : availableCount;
-    let totalCount = position.status!.connectors.length;
-    totalCount = totalCount > MAX_COUNT ? MAX_COUNT : totalCount;
+    const availableCount = position.status!.connectors.reduce((acc, conn) => acc + (conn.status === STATUS_AVAILABLE ? 1 : 0), 0);
+    const clampedAvailableCount = availableCount > MAX_COUNT ? MAX_COUNT : availableCount;
+    const totalCount = position.status!.connectors.length;
+    const clampedTotalCount = totalCount > MAX_COUNT ? MAX_COUNT : totalCount;
 
-    let occupiedCount = totalCount - availableCount;
+    const occupiedCount = totalCount - availableCount;
+    let clampedOccupiedCount = clampedTotalCount - clampedAvailableCount;
+    // Show always 1 occupied, if at least 1 IS occupied
+    clampedOccupiedCount = clampedOccupiedCount === 0 && occupiedCount > 0 ? 1 : clampedOccupiedCount;
 
-    const iconKey = "station-" + occupiedCount + "-" + availableCount
+    const iconKey = "station-" + clampedOccupiedCount + "-" + clampedAvailableCount
     acc.set(iconKey, [...(acc.get(iconKey) ?? []), position]);
 
     return acc;
@@ -119,15 +122,15 @@ function App() {
 
 
   const [viewport, setViewport] = useState({
-    latitude:  positionsWithStatus[0]?.latitude ?? 60.5,
+    latitude: positionsWithStatus[0]?.latitude ?? 60.5,
     longitude: positionsWithStatus[0]?.longitude ?? 8.0,
     zoom: 5
   });
 
-  function onViewportChange(viewport: any) { 
-    const {width, height, ...etc} = viewport
-    setViewport({...etc})
-  } 
+  function onViewportChange(viewport: any) {
+    const { width, height, ...etc } = viewport
+    setViewport({ ...etc })
+  }
   if (positionsWithStatus[0] === undefined) return <p>Waiting for data...</p>;
 
   return (
@@ -143,30 +146,30 @@ function App() {
         width: '100vw'
       }}
     >
-      {Array.from(iconMap.entries()).map(([iconKey, iconPositions]) => 
-      <Source   
-        key={iconKey}
-        id={"source-"+iconKey}  
-        type="geojson"
-        data={makePositionFeatures(iconPositions)}
-      >
-        <Layer
-          type="symbol"
-          layout={{
-            'icon-image': iconKey,
-            'icon-allow-overlap': true,
-            'icon-size': [
-              "interpolate", ["linear"], ["zoom"],
-              5, .05,
-              10, .1,
-              15, .2
-            ]
-          }}
-          paint={{}}
+      {Array.from(iconMap.entries()).map(([iconKey, iconPositions]) =>
+        <Source
+          key={iconKey}
+          id={"source-" + iconKey}
+          type="geojson"
+          data={makePositionFeatures(iconPositions)}
+        >
+          <Layer
+            type="symbol"
+            layout={{
+              'icon-image': iconKey,
+              'icon-allow-overlap': true,
+              'icon-size': [
+                "interpolate", ["linear"], ["zoom"],
+                5, .05,
+                10, .1,
+                15, .2
+              ]
+            }}
+            paint={{}}
           />
-    </Source>
-  )}
-</ReactMapGL>
+        </Source>
+      )}
+    </ReactMapGL>
 
   );
 }
@@ -175,10 +178,10 @@ function makePositionFeatures(positions: StationPosition[]) {
   return {
     type: 'FeatureCollection',
     features: positions.map((position: StationPosition) => (
-      {type: 'Feature', geometry: {type: 'Point', coordinates: [position.longitude, position.latitude]}}
+      { type: 'Feature', geometry: { type: 'Point', coordinates: [position.longitude, position.latitude] } }
     )),
   } as any;
 }
-    
+
 
 export default App;
